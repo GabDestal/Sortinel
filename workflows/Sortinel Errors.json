@@ -1,0 +1,65 @@
+{
+  "name": "Sortinel Errors",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f855366b-546f-4801-8c64-6b8dc554e61b",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "8611482415",
+        "text": "=!Sortinel failed!\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "b56a180d-e309-4a55-8bbb-539ddd48cf37",
+      "name": "Notify Admin",
+      "webhookId": "82bbd097-e4ed-464d-b90a-97ded38a69c5",
+      "credentials": {
+        "telegramApi": {
+          "id": "qKLZutU4T1mo0P1O",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "00b14ebc-02b3-4547-9de1-516f570078ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "366741ecf617495d7b754891959273901c81ed1507d9a42e74c5921add9b99d8"
+  },
+  "nodeGroups": [],
+  "id": "RSIK1AwmT27Od97P",
+  "tags": []
+}

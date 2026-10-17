@@ -1,0 +1,13 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    ports:
+      - "5679:5678"
+    environment:
+      - GENERIC_TIMEZONE=Europe/Paris
+      - TZ=Europe/Paris
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows
+volumes:
+  n8n_data:
