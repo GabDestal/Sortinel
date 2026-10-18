@@ -1,0 +1,20 @@
+{
+  "update_id": 900000002,
+  "message": {
+    "message_id": 2,
+    "date": 1792656000,
+    "from": {
+      "id": 8611482415,
+      "is_bot": false,
+      "first_name": "Demo",
+      "username": "sortinel_demo"
+    },
+    "chat": {
+      "id": 8611482415,
+      "type": "private",
+      "first_name": "Demo",
+      "username": "sortinel_demo"
+    },
+    "text": "Hi, could I get edit access to the Marketing shared drive? My manager Claire approved it this morning."
+  }
+}
