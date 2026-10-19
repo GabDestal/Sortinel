@@ -1,65 +1,239 @@
-{
-  "name": "Sortinel Errors",
-  "nodes": [
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.errorTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        0
-      ],
-      "id": "f855366b-546f-4801-8c64-6b8dc554e61b",
-      "name": "Error Trigger"
-    },
-    {
-      "parameters": {
-        "chatId": "8611482415",
-        "text": "=!Sortinel failed!\nNode: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}",
-        "additionalFields": {}
+[
+  {
+    "updatedAt": "2026-10-22T11:10:56.078Z",
+    "createdAt": "2026-10-15T10:46:24.878Z",
+    "id": "RSIK1AwmT27Od97P",
+    "name": "Sortinel Errors",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.errorTrigger",
+        "typeVersion": 1,
+        "position": [
+          -64,
+          -32
+        ],
+        "id": "f2c68729-3ad3-4075-bbce-b94741d0fb9a",
+        "name": "Error Trigger"
       },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        224,
-        0
-      ],
-      "id": "b56a180d-e309-4a55-8bbb-539ddd48cf37",
-      "name": "Notify Admin",
-      "webhookId": "82bbd097-e4ed-464d-b90a-97ded38a69c5",
-      "credentials": {
-        "telegramApi": {
-          "id": "qKLZutU4T1mo0P1O",
-          "name": "Telegram account"
+      {
+        "parameters": {
+          "chatId": "8611482415",
+          "text": "={{ (() => { const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); const x = $json.execution ?? {}; const wf = $json.workflow ?? {}; return '<b>Sortinel failed</b>\\nWorkflow: ' + e(wf.name ?? 'unknown') + '\\nTicket: ' + (x.id ? 'SRT-' + e(x.id) : 'n/a') + '\\nNode: ' + e(x.lastNodeExecuted) + '\\nError: ' + e(x.error?.message ?? $json.trigger?.error?.message) + '\\nExecution: ' + e(x.url ?? 'n/a'); })() }}",
+          "additionalFields": {
+            "appendAttribution": false,
+            "disable_web_page_preview": true,
+            "parse_mode": "HTML"
+          }
+        },
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          160,
+          -32
+        ],
+        "id": "fab640ba-db8a-4f30-bffc-acfb2513d620",
+        "name": "Notify Admin",
+        "webhookId": "82bbd097-e4ed-464d-b90a-97ded38a69c5",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000
+      },
+      {
+        "parameters": {
+          "chatId": "={{ $('Find Ticket').item.json.chat_id }}",
+          "text": "=Ticket {{ $('Find Ticket').item.json.ticket_id }}: pending review\nThanks, your report has been received. Something went wrong while processing it automatically, so someone will review it and get back to you.",
+          "additionalFields": {
+            "appendAttribution": false,
+            "disable_web_page_preview": true
+          }
+        },
+        "id": "ebda5d94-8a48-4f0c-ab7e-425f1bb36bd1",
+        "name": "Tell User",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          832,
+          160
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "webhookId": "50256824-c661-4ae8-8b5a-4f49e4cc464e"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "SELECT * FROM tickets WHERE ticket_id = $1 LIMIT 1;",
+          "options": {
+            "queryReplacement": "={{ ['SRT-' + ($json.execution?.id ?? '0')] }}"
+          }
+        },
+        "id": "83468fd1-4ad2-4681-a735-bf82e395f46e",
+        "name": "Find Ticket",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          160,
+          160
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "alwaysOutputData": true,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "6d7e8f90-6666-4a5b-9c8d-000000000006",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "processing",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "id": "b0934651-edf8-4a9f-8052-f723788d90c0",
+        "name": "Still Processing?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          384,
+          160
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE tickets SET status = 'to review', reason = $2\nWHERE ticket_id = $1\nRETURNING *;",
+          "options": {
+            "queryReplacement": "={{ [$json.ticket_id, 'Workflow error: ' + ($('Error Trigger').first().json.execution?.error?.message ?? 'unknown')] }}"
+          }
+        },
+        "id": "0047d811-e06f-47b4-993b-72efe3aafc06",
+        "name": "Mark To Review",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          608,
+          160
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
+      }
+    ],
+    "connections": {
+      "Error Trigger": {
+        "main": [
+          [
+            {
+              "node": "Notify Admin",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Find Ticket",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Ticket": {
+        "main": [
+          [
+            {
+              "node": "Still Processing?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Still Processing?": {
+        "main": [
+          [
+            {
+              "node": "Mark To Review",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark To Review": {
+        "main": [
+          [
+            {
+              "node": "Tell User",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate"
+    },
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "366741ecf617495d7b754891959273901c81ed1507d9a42e74c5921add9b99d8"
+    },
+    "nodeGroups": [],
+    "pinData": {},
+    "versionId": "72c5e388-f871-4cad-bfa9-6ee94b9e412d",
+    "activeVersionId": null,
+    "versionCounter": 3,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-10-15T10:46:24.879Z",
+        "createdAt": "2026-10-15T10:46:24.879Z",
+        "role": "workflow:owner",
+        "workflowId": "RSIK1AwmT27Od97P",
+        "projectId": "qoNMpiTJvqT2YYry",
+        "project": {
+          "updatedAt": "2026-10-15T10:45:22.465Z",
+          "createdAt": "2026-10-15T10:44:40.745Z",
+          "id": "qoNMpiTJvqT2YYry",
+          "name": "Gabriel Destal <gabrieldestal7@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "fccacf6b-0a5c-44f1-9683-5949aeae1e14"
         }
       }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
     }
-  ],
-  "pinData": {},
-  "connections": {
-    "Error Trigger": {
-      "main": [
-        [
-          {
-            "node": "Notify Admin",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
-  "versionId": "00b14ebc-02b3-4547-9de1-516f570078ae",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "366741ecf617495d7b754891959273901c81ed1507d9a42e74c5921add9b99d8"
-  },
-  "nodeGroups": [],
-  "id": "RSIK1AwmT27Od97P",
-  "tags": []
-}
+  }
+]
