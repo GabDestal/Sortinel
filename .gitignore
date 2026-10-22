@@ -3,9 +3,8 @@
 .env.*
 !.env.example
 
-# Local data (Docker volumes live outside the repo, but never commit these if bind-mounted)
+# Local data (the Docker volume lives outside the repo, but never commit it if bind-mounted)
 n8n_data/
-postgres_data/
 .n8n/
 *.sqlite
 *.sqlite-journal

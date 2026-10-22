@@ -1,8 +1,8 @@
 [
   {
-    "updatedAt": "2026-10-22T11:10:56.078Z",
-    "createdAt": "2026-10-15T10:46:24.878Z",
-    "id": "RSIK1AwmT27Od97P",
+    "updatedAt": "2026-10-21T11:30:31.113Z",
+    "createdAt": "2026-10-17T15:07:24.719Z",
+    "id": "AOVKcFVE4hUAdJpK",
     "name": "Sortinel Errors",
     "description": null,
     "active": false,
@@ -13,16 +13,16 @@
         "type": "n8n-nodes-base.errorTrigger",
         "typeVersion": 1,
         "position": [
-          -64,
-          -32
+          -16,
+          32
         ],
-        "id": "f2c68729-3ad3-4075-bbce-b94741d0fb9a",
+        "id": "a2a142a0-e80c-4a35-bbb4-fb1c5eacce66",
         "name": "Error Trigger"
       },
       {
         "parameters": {
           "chatId": "8611482415",
-          "text": "={{ (() => { const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); const x = $json.execution ?? {}; const wf = $json.workflow ?? {}; return '<b>Sortinel failed</b>\\nWorkflow: ' + e(wf.name ?? 'unknown') + '\\nTicket: ' + (x.id ? 'SRT-' + e(x.id) : 'n/a') + '\\nNode: ' + e(x.lastNodeExecuted) + '\\nError: ' + e(x.error?.message ?? $json.trigger?.error?.message) + '\\nExecution: ' + e(x.url ?? 'n/a'); })() }}",
+          "text": "={{ (() => { const e = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); const x = $json.execution ?? {}; return '<b>Sortinel failed</b>\\nTicket: SRT-' + e(x.id) + '\\nNode: ' + e(x.lastNodeExecuted) + '\\nError: ' + e(x.error?.message) + '\\nExecution: ' + e(x.url); })() }}",
           "additionalFields": {
             "appendAttribution": false,
             "disable_web_page_preview": true,
@@ -32,17 +32,31 @@
         "type": "n8n-nodes-base.telegram",
         "typeVersion": 1.2,
         "position": [
-          160,
-          -32
+          208,
+          32
         ],
-        "id": "fab640ba-db8a-4f30-bffc-acfb2513d620",
+        "id": "8e8dc0e1-1b8e-49fe-b534-a4753017883f",
         "name": "Notify Admin",
         "webhookId": "82bbd097-e4ed-464d-b90a-97ded38a69c5",
         "retryOnFail": true,
         "maxTries": 3,
-        "waitBetweenTries": 2000
+        "waitBetweenTries": 2000,
+        "credentials": {
+          "telegramApi": {
+            "id": "mRdgoeFRFi7vbXxQ",
+            "name": "Telegram account"
+          }
+        }
       },
       {
+        "id": "156e39da-ccb9-4fd0-bf6b-2df50e905bbd",
+        "name": "Tell User",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          880,
+          224
+        ],
         "parameters": {
           "chatId": "={{ $('Find Ticket').item.json.chat_id }}",
           "text": "=Ticket {{ $('Find Ticket').item.json.ticket_id }}: pending review\nThanks, your report has been received. Something went wrong while processing it automatically, so someone will review it and get back to you.",
@@ -51,43 +65,75 @@
             "disable_web_page_preview": true
           }
         },
-        "id": "ebda5d94-8a48-4f0c-ab7e-425f1bb36bd1",
-        "name": "Tell User",
-        "type": "n8n-nodes-base.telegram",
-        "typeVersion": 1.2,
-        "position": [
-          832,
-          160
-        ],
         "retryOnFail": true,
         "maxTries": 3,
         "waitBetweenTries": 2000,
-        "webhookId": "50256824-c661-4ae8-8b5a-4f49e4cc464e"
+        "webhookId": "50256824-c661-4ae8-8b5a-4f49e4cc464e",
+        "credentials": {
+          "telegramApi": {
+            "id": "mRdgoeFRFi7vbXxQ",
+            "name": "Telegram account"
+          }
+        }
       },
       {
+        "id": "2f3566ce-89fb-4333-b01b-2ac99b176c26",
+        "name": "Find Ticket",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          208,
+          224
+        ],
         "parameters": {
-          "operation": "executeQuery",
-          "query": "SELECT * FROM tickets WHERE ticket_id = $1 LIMIT 1;",
+          "resource": "sheet",
+          "operation": "read",
+          "documentId": {
+            "__rl": true,
+            "value": "",
+            "mode": "id"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "ticket_id",
+                "lookupValue": "=SRT-{{ $json.execution.id }}"
+              }
+            ]
+          },
           "options": {
-            "queryReplacement": "={{ ['SRT-' + ($json.execution?.id ?? '0')] }}"
+            "returnFirstMatch": true
           }
         },
-        "id": "83468fd1-4ad2-4681-a735-bf82e395f46e",
-        "name": "Find Ticket",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
-        "position": [
-          160,
-          160
-        ],
+        "onError": "continueRegularOutput",
         "retryOnFail": true,
         "maxTries": 3,
         "waitBetweenTries": 2000,
         "alwaysOutputData": true,
-        "onError": "continueRegularOutput"
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "VWXE4Sq7fWK0ZSsv",
+            "name": "Google Sheets account"
+          }
+        }
       },
       {
+        "id": "3634bed0-9d9c-4f74-867a-92b8301bbf56",
+        "name": "Still Processing?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          432,
+          224
+        ],
         "parameters": {
+          "looseTypeValidation": true,
           "conditions": {
             "options": {
               "caseSensitive": true,
@@ -109,38 +155,168 @@
             ],
             "combinator": "and"
           },
-          "looseTypeValidation": true,
           "options": {}
-        },
-        "id": "b0934651-edf8-4a9f-8052-f723788d90c0",
-        "name": "Still Processing?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.3,
-        "position": [
-          384,
-          160
-        ]
+        }
       },
       {
-        "parameters": {
-          "operation": "executeQuery",
-          "query": "UPDATE tickets SET status = 'to review', reason = $2\nWHERE ticket_id = $1\nRETURNING *;",
-          "options": {
-            "queryReplacement": "={{ [$json.ticket_id, 'Workflow error: ' + ($('Error Trigger').first().json.execution?.error?.message ?? 'unknown')] }}"
-          }
-        },
-        "id": "0047d811-e06f-47b4-993b-72efe3aafc06",
+        "id": "9e22cf55-0c5e-42d5-b030-caca5c871fcc",
         "name": "Mark To Review",
-        "type": "n8n-nodes-base.postgres",
-        "typeVersion": 2.6,
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
         "position": [
-          608,
-          160
+          656,
+          224
         ],
+        "parameters": {
+          "operation": "update",
+          "documentId": {
+            "__rl": true,
+            "value": "",
+            "mode": "id"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ticket_id": "={{ $json.ticket_id }}",
+              "status": "to review",
+              "reason": "=Workflow error: {{ $('Error Trigger').first().json.execution.error.message }}"
+            },
+            "matchingColumns": [
+              "ticket_id"
+            ],
+            "schema": [
+              {
+                "id": "received_at",
+                "displayName": "received_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "chat_id",
+                "displayName": "chat_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "user",
+                "displayName": "user",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "text",
+                "displayName": "text",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "category",
+                "displayName": "category",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "severity",
+                "displayName": "severity",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "confidence",
+                "displayName": "confidence",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "reason",
+                "displayName": "reason",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "status",
+                "displayName": "status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "urlhaus_status",
+                "displayName": "urlhaus_status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "ticket_id",
+                "displayName": "ticket_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "onError": "continueRegularOutput",
         "retryOnFail": true,
         "maxTries": 3,
         "waitBetweenTries": 2000,
-        "onError": "continueRegularOutput"
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "VWXE4Sq7fWK0ZSsv",
+            "name": "Google Sheets account"
+          }
+        }
       }
     ],
     "connections": {
@@ -196,44 +372,18 @@
     },
     "settings": {
       "executionOrder": "v1",
-      "binaryMode": "separate"
+      "binaryMode": "separate",
+      "availableInMCP": true
     },
     "staticData": null,
     "meta": {
-      "templateCredsSetupCompleted": true,
-      "instanceId": "366741ecf617495d7b754891959273901c81ed1507d9a42e74c5921add9b99d8"
+      "aiBuilderAssisted": true,
+      "builderVariant": "mcp"
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "72c5e388-f871-4cad-bfa9-6ee94b9e412d",
-    "activeVersionId": null,
-    "versionCounter": 3,
+    "versionId": "e4c576ab-74d1-4ab6-8ced-3c9594df58ed",
     "triggerCount": 0,
-    "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-10-15T10:46:24.879Z",
-        "createdAt": "2026-10-15T10:46:24.879Z",
-        "role": "workflow:owner",
-        "workflowId": "RSIK1AwmT27Od97P",
-        "projectId": "qoNMpiTJvqT2YYry",
-        "project": {
-          "updatedAt": "2026-10-15T10:45:22.465Z",
-          "createdAt": "2026-10-15T10:44:40.745Z",
-          "id": "qoNMpiTJvqT2YYry",
-          "name": "Gabriel Destal <gabrieldestal7@gmail.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "fccacf6b-0a5c-44f1-9683-5949aeae1e14"
-        }
-      }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
-    }
+    "tags": []
   }
 ]

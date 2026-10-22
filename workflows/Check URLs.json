@@ -1,8 +1,8 @@
 [
   {
-    "updatedAt": "2026-10-22T11:14:16.497Z",
-    "createdAt": "2026-10-15T10:46:24.873Z",
-    "id": "HC9neZ7vX3B0eCt0",
+    "updatedAt": "2026-10-21T12:20:49.658Z",
+    "createdAt": "2026-10-17T15:07:09.009Z",
+    "id": "U0yvmvQLr3WdAcGi",
     "name": "Check URLs",
     "description": null,
     "active": false,
@@ -10,102 +10,23 @@
     "nodes": [
       {
         "parameters": {
-          "method": "POST",
-          "url": "https://urlhaus-api.abuse.ch/v1/host/",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "sendBody": true,
-          "contentType": "form-urlencoded",
-          "bodyParameters": {
-            "parameters": [
+          "workflowInputs": {
+            "values": [
               {
-                "name": "host",
-                "value": "={{ $('Split URLs').item.json.host }}"
+                "name": "urls",
+                "type": "array"
               }
             ]
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.5,
-        "position": [
-          912,
-          -144
-        ],
-        "id": "b5cea4c5-0676-4b7d-b843-0b7a03352ac1",
-        "name": "URLhaus Host Lookup",
-        "retryOnFail": true,
-        "waitBetweenTries": 2000,
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "MMUn9z29WdhuS4K3",
-            "name": "URLhaus"
           }
         },
-        "maxTries": 3
-      },
-      {
-        "parameters": {
-          "jsCode": "const urls = ($input.first().json.urls ?? []).slice(0, 5);\nif (!urls.length) return [{ json: { url: null, host: null } }];\nreturn urls.map(raw => {\n  const url = raw.replace(/[.,;:!?]+$/, '');\n  // URL() isn't available in the Code node sandbox, so parse the host by hand\n  const host = url.match(/^https?:\\/\\/(?:[^@\\/?#]*@)?([^\\/?#:]+)/i)?.[1]?.toLowerCase() ?? null;\n  return { json: { url, host } };\n});"
-        },
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "typeVersion": 1.3,
         "position": [
-          224,
-          0
+          -480,
+          80
         ],
-        "id": "693a07db-3097-4096-8377-d87631bfab3b",
-        "name": "Split URLs"
-      },
-      {
-        "parameters": {
-          "jsCode": "const safe = name => { try { return $(name).all().map(i => i.json); } catch { return []; } };\nconst urlRows = safe('URLhaus Lookup');\nconst hostRows = safe('URLhaus Host Lookup');\nconst rows = [...urlRows, ...hostRows];\n\nconst urlHit = urlRows.some(r => r.query_status === 'ok');\nconst hostHit = hostRows.some(r => r.query_status === 'ok');\nconst failed = rows.some(r => r.error);\nconst checked = rows.some(r => r.query_status);\n\nlet urlhaus_status, reply_text;\nif (urlHit) {\n  urlhaus_status = 'known_malicious_url';\n  reply_text = \"This link is on the URLhaus list of known malicious URLs. Don't open it or enter any credentials. If you already did, change your password now. IT has been notified.\";\n} else if (hostHit) {\n  urlhaus_status = 'malicious_host';\n  reply_text = \"The site this link points to is known on URLhaus for hosting malicious content. Don't open it or enter any credentials. If you already did, change your password now. IT has been notified.\";\n} else if (failed) {\n  urlhaus_status = 'lookup_failed';\n  reply_text = \"I couldn't check the link right now, so treat it as malicious: don't open it or enter credentials. If you already did, change your password now. IT has been notified.\";\n} else if (checked) {\n  urlhaus_status = 'not_listed';\n  reply_text = \"The link isn't on the URLhaus malicious list, but still treat it as suspicious: don't enter credentials, and change your password if you already did. IT has been notified.\";\n} else {\n  urlhaus_status = 'no_urls';\n  reply_text = \"Don't click any link in that message or enter credentials. If you already entered your password, change it now. IT has been notified.\";\n}\nreturn [{ json: { status: 'open', reply_text, urlhaus_status } }];"
-        },
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          1136,
-          16
-        ],
-        "id": "9bffff06-df83-4748-bb64-91adf3a717c9",
-        "name": "Summarise Verdict"
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://urlhaus-api.abuse.ch/v1/url/",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "sendBody": true,
-          "contentType": "form-urlencoded",
-          "bodyParameters": {
-            "parameters": [
-              {
-                "name": "url",
-                "value": "={{ $json.url }}"
-              }
-            ]
-          },
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.5,
-        "position": [
-          688,
-          -144
-        ],
-        "id": "f1ea6a0d-fba5-48ec-bc48-9eee4279e335",
-        "name": "URLhaus Lookup",
-        "retryOnFail": true,
-        "waitBetweenTries": 2000,
-        "credentials": {
-          "httpHeaderAuth": {
-            "id": "MMUn9z29WdhuS4K3",
-            "name": "URLhaus"
-          }
-        },
-        "onError": "continueRegularOutput",
-        "maxTries": 3
+        "id": "5d8e3441-eaf9-427f-85fc-5cfd6f27a4d5",
+        "name": "When Executed by Another Workflow"
       },
       {
         "parameters": {
@@ -135,62 +56,118 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          448,
-          0
+          -32,
+          80
         ],
-        "id": "9fc10762-ca8a-428f-84a4-4246b8512500",
+        "id": "08a8ea59-e33a-40fb-8977-3720ed9996cb",
         "name": "Has URL?"
       },
       {
         "parameters": {
-          "inputSource": "workflowInputs",
-          "workflowInputs": {
-            "values": [
+          "method": "POST",
+          "url": "https://urlhaus-api.abuse.ch/v1/url/",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "form-urlencoded",
+          "bodyParameters": {
+            "parameters": [
               {
-                "name": "urls",
-                "type": "array"
+                "name": "url",
+                "value": "={{ $json.url }}"
               }
             ]
-          }
+          },
+          "options": {}
         },
-        "type": "n8n-nodes-base.executeWorkflowTrigger",
-        "typeVersion": 1.2,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.5,
         "position": [
-          0,
-          0
+          224,
+          -64
         ],
-        "id": "f1659a3f-9ff6-4478-ac3c-c862f9f230bd",
-        "name": "When Executed by Another Workflow"
+        "id": "f150ad0f-ef7e-429d-8dfe-f8cc59fe62c5",
+        "name": "URLhaus Lookup",
+        "retryOnFail": true,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "FbruP8A1g23uNK2N",
+            "name": "URLhaus"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const safe = name => { try { return $(name).all().map(i => i.json); } catch { return []; } };\nconst urlRows = safe('URLhaus Lookup');\nconst hostRows = safe('URLhaus Host Lookup');\nconst rows = [...urlRows, ...hostRows];\n\nconst urlHit = urlRows.some(r => r.query_status === 'ok');\nconst hostHit = hostRows.some(r => r.query_status === 'ok');\nconst failed = rows.some(r => r.error);\nconst checked = rows.some(r => r.query_status);\n\nlet urlhaus_status, reply_text;\nif (urlHit) {\n  urlhaus_status = 'known_malicious_url';\n  reply_text = \"This link is on the URLhaus list of known malicious URLs. Don't open it or enter any credentials. If you already did, change your password now. IT has been notified.\";\n} else if (hostHit) {\n  urlhaus_status = 'malicious_host';\n  reply_text = \"The site this link points to is known on URLhaus for hosting malicious content. Don't open it or enter any credentials. If you already did, change your password now. IT has been notified.\";\n} else if (failed) {\n  urlhaus_status = 'lookup_failed';\n  reply_text = \"I couldn't check the link right now, so treat it as malicious: don't open it or enter credentials. If you already did, change your password now. IT has been notified.\";\n} else if (checked) {\n  urlhaus_status = 'not_listed';\n  reply_text = \"The link isn't on the URLhaus malicious list, but still treat it as suspicious: don't enter credentials, and change your password if you already did. IT has been notified.\";\n} else {\n  urlhaus_status = 'no_urls';\n  reply_text = \"Don't click any link in that message or enter credentials. If you already entered your password, change it now. IT has been notified.\";\n}\nreturn [{ json: { status: 'open', reply_text, urlhaus_status } }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          672,
+          96
+        ],
+        "id": "6f7f0f29-0d3f-431c-b484-99233728336d",
+        "name": "Summarise Verdict"
+      },
+      {
+        "parameters": {
+          "jsCode": "const urls = ($input.first().json.urls ?? []).slice(0, 5);\nif (!urls.length) return [{ json: { url: null, host: null } }];\nreturn urls.map(raw => {\n  const url = raw.replace(/[.,;:!?]+$/, '');\n  // URL() isn't available in the Code node sandbox, so parse the host by hand\n  const host = url.match(/^https?:\\/\\/(?:[^@\\/?#]*@)?([^\\/?#:]+)/i)?.[1]?.toLowerCase() ?? null;\n  return { json: { url, host } };\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -256,
+          80
+        ],
+        "id": "4d44354a-5485-4716-a460-339508d20225",
+        "name": "Split URLs"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://urlhaus-api.abuse.ch/v1/host/",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "contentType": "form-urlencoded",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "host",
+                "value": "={{ $('Split URLs').item.json.host }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.5,
+        "position": [
+          448,
+          -64
+        ],
+        "id": "daa660fa-92ed-44d4-a0e9-cdf150d422b6",
+        "name": "URLhaus Host Lookup",
+        "retryOnFail": true,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput",
+        "maxTries": 3,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "FbruP8A1g23uNK2N",
+            "name": "URLhaus"
+          }
+        }
       }
     ],
     "connections": {
-      "Split URLs": {
+      "When Executed by Another Workflow": {
         "main": [
           [
             {
-              "node": "Has URL?",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "URLhaus Host Lookup": {
-        "main": [
-          [
-            {
-              "node": "Summarise Verdict",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "URLhaus Lookup": {
-        "main": [
-          [
-            {
-              "node": "URLhaus Host Lookup",
+              "node": "Split URLs",
               "type": "main",
               "index": 0
             }
@@ -215,11 +192,33 @@
           ]
         ]
       },
-      "When Executed by Another Workflow": {
+      "URLhaus Lookup": {
         "main": [
           [
             {
-              "node": "Split URLs",
+              "node": "URLhaus Host Lookup",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split URLs": {
+        "main": [
+          [
+            {
+              "node": "Has URL?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "URLhaus Host Lookup": {
+        "main": [
+          [
+            {
+              "node": "Summarise Verdict",
               "type": "main",
               "index": 0
             }
@@ -229,43 +228,18 @@
     },
     "settings": {
       "executionOrder": "v1",
-      "binaryMode": "separate"
+      "binaryMode": "separate",
+      "availableInMCP": true
     },
     "staticData": null,
     "meta": {
-      "instanceId": "366741ecf617495d7b754891959273901c81ed1507d9a42e74c5921add9b99d8"
+      "aiBuilderAssisted": true,
+      "builderVariant": "mcp"
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "c6a1c8f4-2756-4b78-be07-d3593d533bda",
-    "activeVersionId": null,
-    "versionCounter": 11,
+    "versionId": "a3b2a9fa-86af-457b-a7c5-a798405c2087",
     "triggerCount": 0,
-    "sourceWorkflowId": null,
-    "tags": [],
-    "shared": [
-      {
-        "updatedAt": "2026-10-15T10:46:24.876Z",
-        "createdAt": "2026-10-15T10:46:24.876Z",
-        "role": "workflow:owner",
-        "workflowId": "HC9neZ7vX3B0eCt0",
-        "projectId": "qoNMpiTJvqT2YYry",
-        "project": {
-          "updatedAt": "2026-10-15T10:45:22.465Z",
-          "createdAt": "2026-10-15T10:44:40.745Z",
-          "id": "qoNMpiTJvqT2YYry",
-          "name": "Gabriel Destal <gabrieldestal7@gmail.com>",
-          "type": "personal",
-          "icon": null,
-          "description": null,
-          "customTelemetryTags": [],
-          "creatorId": "fccacf6b-0a5c-44f1-9683-5949aeae1e14"
-        }
-      }
-    ],
-    "versionMetadata": {
-      "name": null,
-      "description": null
-    }
+    "tags": []
   }
 ]
